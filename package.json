@@ -1,0 +1,13 @@
+{
+    "name": "map-server",
+    "version": "1.0.0",
+    "main": "api/points.js",
+    "scripts": {
+      "start": "node api/points.js"
+    },
+    "dependencies": {
+      "express": "^4.18.2",
+      "cors": "^2.8.5"
+    }
+  }
+  
