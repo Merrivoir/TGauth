@@ -1,8 +1,10 @@
 import express from "express";
 import crypto from "crypto";
 
-const app = express();
+const cors = require('cors');
 
+const app = express();
+app.use(cors());
 app.use(express.json());
 
 const BOT_TOKEN = process.env.tg_auth_token; // Замените на токен вашего бота
