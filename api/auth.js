@@ -1,34 +1,45 @@
-import express from "express";
-import crypto from "crypto";
-
-const cors = require('cors');
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-const BOT_TOKEN = process.env.tg_auth_token; // Замените на токен вашего бота
+app.get('/auth', async (req, res) => {
+    try {
+        const authData = req.query;
 
-function checkTelegramAuth(data) {
-  const { hash, ...rest } = data;
-  const secretKey = crypto.createHash("sha256").update(BOT_TOKEN).digest();
-  const checkString = Object.keys(rest)
-    .sort()
-    .map((key) => `${key}=${rest[key]}`)
-    .join("\n");
-  const hmac = crypto.createHmac("sha256", secretKey).update(checkString).digest("hex");
-  return hmac === hash;
-}
+        // Проверка подписи Telegram
+        const dataCheckArr = [];
+        for (const key in authData) {
+            if (key !== 'hash') dataCheckArr.push(`${key}=${authData[key]}`);
+        }
+        dataCheckArr.sort();
+        
+        const secretKey = crypto.createHash('sha256')
+            .update(process.env.BOT_TOKEN)
+            .digest();
+            
+        const computedHash = crypto
+            .createHmac('sha256', secretKey)
+            .update(dataCheckArr.join('\n'))
+            .digest('hex');
 
-app.get("/api/auth", (req, res) => {
-  const data = req.query;
+        if (computedHash !== authData.hash) {
+            return res.status(403).send('Invalid hash');
+        }
 
-  if (!checkTelegramAuth(data)) {
-    return res.status(403).send("Неверные данные авторизации.");
-  }
+        // Создание JWT
+        const token = jwt.sign(
+            { id: authData.id }, 
+            process.env.SECRET_KEY, 
+            { expiresIn: '1h' }
+        );
 
-  // Успешная авторизация
-  res.send(`Добро пожаловать, ${data.first_name}!`);
+        res.redirect(`/dashboard?token=${token}`);
+
+    } catch (error) {
+        res.status(500).send('Server error');
+    }
 });
 
-export default app;
+module.exports = app;
