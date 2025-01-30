@@ -28,6 +28,10 @@
       "src": "/verify",
       "methods": ["POST"],
       "dest": "/api/verify.js"
+    },
+    {
+      "src": "/denied",
+      "dest": "/public/denied.html"
     }
   ]
 }
