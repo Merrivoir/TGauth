@@ -32,7 +32,7 @@ app.get('/auth', async (req, res) => {
         const token = jwt.sign(
             { id: authData.id }, 
             process.env.SECRET_KEY, 
-            { expiresIn: '1h' }
+            { expiresIn: '1d' }
         );
 
         res.redirect(`/dashboard?token=${token}`);
