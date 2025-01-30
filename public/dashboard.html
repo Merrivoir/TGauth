@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Welcome to Dashboard!</h1>
+    <script>
+        // Проверка токена
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (token) {
+            localStorage.setItem('jwt', token);
+        }
+
+        // Проверка авторизации через API
+        fetch('https://richmom.vercel.app/verify', {
+            method: 'POST',
+            headers: { 'Authorization': token }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.user) {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>
