@@ -32,6 +32,13 @@
     {
       "src": "/denied",
       "dest": "/public/denied.html"
+    },
+    {
+      "src": "/verify",
+      "methods": ["POST"],
+      "headers": {
+        "Access-Control-Allow-Origin": "https://merrivoir.github.io/staff"
+      }
     }
   ]
 }
