@@ -21,7 +21,7 @@
     },
     {
       "src": "/auth",
-      "methods": ["POST"],
+      "methods": ["GET"],
       "dest": "/api/auth.js"
     },
     {
