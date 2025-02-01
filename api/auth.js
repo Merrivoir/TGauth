@@ -3,77 +3,89 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
 const app = express();
+const SECRET_KEY = process.env.SECRET_KEY;
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const ALLOWED_DOMAINS = process.env.ALLOWED_DOMAINS?.split(',') || [];
+const ALLOWED_IDS = process.env.ALLOWED_IDS?.split(',')?.reduce((acc, pair) => {
+  const [id, role] = pair.split(':').map(s => s.trim());
+  if (id) acc[id] = role || 'user';
+  return acc;
+}, {}) || {};
+
+const isValidHttpUrl = (string) => {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
 
 app.get('/auth', async (req, res) => {
-    try {
-        const { source } = req.query;
-        const authData = req.query;
+  try {
+    const { source, ...authData } = req.query;
 
-        // Проверка подписи Telegram
-        const dataCheckArr = [];
-        for (const key in authData) {
-            if (key !== 'hash' && key !== 'source') {
-                dataCheckArr.push(`${key}=${authData[key]}`);
-            }
-        }
-        dataCheckArr.sort();
-
-        const secretKey = crypto.createHash('sha256')
-            .update(process.env.BOT_TOKEN)
-            .digest();
-
-        const computedHash = crypto
-            .createHmac('sha256', secretKey)
-            .update(dataCheckArr.join('\n'))
-            .digest('hex');
-
-        if (computedHash !== authData.hash) {
-            return res.redirect(`https://richmom.vercel.app/denied?reason=invalid_hash&source=${source}`);
-        }
-
-        // Получаем права пользователя
-        const allowedUsers = process.env.ALLOWED_IDS.split(',')
-            .reduce((acc, pair) => {
-                if (!pair.includes(':')) {
-                    console.error(`Invalid pair: ${pair}`);
-                    return acc; // Пропускаем некорректные записи
-                }
-        
-                const [idPart, rolePart] = pair.split(':');
-                const id = idPart.trim();
-                const role = rolePart?.trim() || 'guest'; // Значение по умолчанию
-        
-                acc[id] = role;
-                return acc;
-            }, {});
-
-        const userRole = allowedUsers[authData.id] || 'guest';
-        
-        // Генерируем токен
-        const token = jwt.sign(
-            { 
-                id: authData.id,
-                role: userRole,
-                username: authData.username 
-            },
-            process.env.SECRET_KEY,
-            { expiresIn: '12h' }
-        );
-
-        // Перенаправляем обратно на исходный сайт
-        const decodedSource = decodeURIComponent(source);
-        const allowedDomains = process.env.ALLOWED_DOMAINS.split(',');
-        const targetDomain = new URL(decodedSource).hostname;
-
-        if (!allowedDomains.includes(targetDomain)) {
-            return res.redirect('https://richmom.vercel.app/denied?reason=invalid_domain');
-        }
-        res.redirect(`${decodeURIComponent(source)}?token=${token}`);
-
-    } catch (error) {
-        console.error('Auth error:', error);
-        res.redirect(`https://richmom.vercel.app/denied?reason=server_error`);
+    // 1. Проверка source
+    if (!source || !isValidHttpUrl(decodeURIComponent(source))) {
+      return res.redirect('https://richmom.vercel.app/denied?reason=invalid_source');
     }
+
+    // 2. Проверка домена
+    const decodedSource = decodeURIComponent(source);
+    const targetDomain = new URL(decodedSource).hostname;
+    if (!ALLOWED_DOMAINS.includes(targetDomain)) {
+      return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_domain');
+    }
+
+    // 3. Проверка подписи Telegram
+    const dataCheckArr = [];
+    for (const key in authData) {
+      if (key !== 'hash' && authData[key] !== '') {
+        dataCheckArr.push(`${key}=${authData[key]}`);
+      }
+    }
+    dataCheckArr.sort();
+
+    const secretKey = crypto.createHash('sha256')
+      .update(BOT_TOKEN)
+      .digest();
+
+    const computedHash = crypto
+      .createHmac('sha256', secretKey)
+      .update(dataCheckArr.join('\n'))
+      .digest('hex');
+
+    if (computedHash !== authData.hash) {
+      return res.redirect('https://richmom.vercel.app/denied?reason=invalid_hash');
+    }
+
+    // 4. Проверка ALLOWED_IDS
+    const userId = authData.id?.toString();
+    if (!userId || !ALLOWED_IDS[userId]) {
+      console.log(`Access denied for ID: ${userId}`);
+      return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_user');
+    }
+
+    // 5. Генерация JWT
+    const token = jwt.sign(
+      {
+        id: userId,
+        role: ALLOWED_IDS[userId],
+        username: authData.username
+      },
+      SECRET_KEY,
+      { expiresIn: '24h' }
+    );
+
+    // 6. Перенаправление
+    const redirectUrl = new URL(decodedSource);
+    redirectUrl.searchParams.set('token', token);
+    res.redirect(redirectUrl.toString());
+
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.redirect('https://richmom.vercel.app/denied?reason=server_error');
+  }
 });
 
 module.exports = app;
