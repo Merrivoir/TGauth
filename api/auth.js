@@ -71,7 +71,7 @@ app.get('/auth', async (req, res) => {
     const token = jwt.sign(
       {
         id: userId,
-        role: ALLOWED_IDS[userId],
+        role: ALLOWED_IDS[userId] || "user",
         username: authData.username
       },
       SECRET_KEY,
