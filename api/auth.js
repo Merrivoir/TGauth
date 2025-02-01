@@ -6,12 +6,13 @@ const app = express();
 
 app.get('/auth', async (req, res) => {
     try {
+        const { source } = req.query;
         const authData = req.query;
 
-        // 1. Проверка подписи Telegram
+        // Проверка подписи Telegram
         const dataCheckArr = [];
         for (const key in authData) {
-            if (key !== 'hash' && authData[key] !== '') {
+            if (key !== 'hash' && key !== 'source') {
                 dataCheckArr.push(`${key}=${authData[key]}`);
             }
         }
@@ -27,35 +28,44 @@ app.get('/auth', async (req, res) => {
             .digest('hex');
 
         if (computedHash !== authData.hash) {
-            return res.redirect('/denied?reason=invalid_hash');
+            return res.redirect(`https://richmom.vercel.app/denied?reason=invalid_hash&source=${source}`);
         }
 
-        // 2. Проверка белого списка ID
-        const userId = parseInt(authData.id);
-        const allowedIds = process.env.ALLOWED_IDS.split(',')
-            .map(id => parseInt(id.trim()))
-            .filter(id => !isNaN(id));
+        // Получаем права пользователя
+        const allowedUsers = process.env.ALLOWED_IDS.split(',')
+            .reduce((acc, pair) => {
+                if (!pair.includes(':')) {
+                    console.error(`Invalid pair: ${pair}`);
+                    return acc; // Пропускаем некорректные записи
+                }
+        
+                const [idPart, rolePart] = pair.split(':');
+                const id = idPart.trim();
+                const role = rolePart?.trim() || 'guest'; // Значение по умолчанию
+        
+                acc[id] = role;
+                return acc;
+            }, {});
 
-        if (!allowedIds.includes(userId)) {
-            return res.redirect('/denied?reason=not_allowed');
-        }
-
-        // 3. Генерация JWT
+        const userRole = allowedUsers[authData.id] || 'guest';
+        
+        // Генерируем токен
         const token = jwt.sign(
             { 
-                id: userId,
+                id: authData.id,
+                role: userRole,
                 username: authData.username 
             },
             process.env.SECRET_KEY,
-            { expiresIn: '1h' }
+            { expiresIn: '12h' }
         );
 
-        // 4. Перенаправление с токеном
-        res.redirect(`/dashboard?token=${token}`);
+        // Перенаправляем обратно на исходный сайт
+        res.redirect(`${decodeURIComponent(source)}?token=${token}`);
 
     } catch (error) {
         console.error('Auth error:', error);
-        res.redirect('/denied?reason=server_error');
+        res.redirect(`https://richmom.vercel.app/denied?reason=server_error`);
     }
 });
 
