@@ -31,11 +31,11 @@ app.get('/auth', async (req, res) => {
     }
 
     // 2. Проверка домена
-    const decodedSource = decodeURIComponent(source);
+    /*const decodedSource = decodeURIComponent(source);
     const targetDomain = new URL(decodedSource).hostname;
     if (!ALLOWED_DOMAINS.includes(targetDomain)) {
       return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_domain');
-    }
+    }*/
 
     // 3. Проверка подписи Telegram
     const dataCheckArr = [];
