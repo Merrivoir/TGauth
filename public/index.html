@@ -21,9 +21,8 @@
             const source = params.get('source') || 'https://richmom.vercel.app';
             console.log(`1.${source}`)
             const tgcont = document.getElementById('telegram-widget')
-            tgcont.innerHTML = `<script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="richmom_auth_bot" data-size="large" data-radius="4" data-auth-url="http://richmom.vercel.app/auth?source=${encodeURIComponent(source)}" data-request-access="write"></script>
-    `
-    })
+            tgcont.innerHTML = `<script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="richmom_auth_bot" data-size="large" data-radius="4" data-auth-url="http://richmom.vercel.app/auth?source=${encodeURIComponent(source)}" data-request-access="write"><\/script>`
+        })
     </script>
 </body>
 
