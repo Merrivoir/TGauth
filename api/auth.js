@@ -61,6 +61,13 @@ app.get('/auth', async (req, res) => {
         );
 
         // Перенаправляем обратно на исходный сайт
+        const decodedSource = decodeURIComponent(source);
+        const allowedDomains = process.env.ALLOWED_DOMAINS.split(',');
+        const targetDomain = new URL(decodedSource).hostname;
+
+        if (!allowedDomains.includes(targetDomain)) {
+            return res.redirect('https://richmom.vercel.app/denied?reason=invalid_domain');
+        }
         res.redirect(`${decodeURIComponent(source)}?token=${token}`);
 
     } catch (error) {
