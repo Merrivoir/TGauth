@@ -60,11 +60,11 @@ app.get('/auth', async (req, res) => {
     }
 
     // 4. Проверка ALLOWED_IDS
-    const userId = authData.id?.toString();
+    /*const userId = authData.id?.toString();
     if (!userId || !ALLOWED_IDS[userId]) {
       console.log(`Access denied for ID: ${userId}`);
       return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_user');
-    }
+    }*/
 
     // 5. Генерация JWT
     const token = jwt.sign(
