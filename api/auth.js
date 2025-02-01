@@ -24,6 +24,7 @@ const isValidHttpUrl = (string) => {
 app.get('/auth', async (req, res) => {
   try {
     const { source, ...authData } = req.query;
+    console.lod(authData)
 
     // 1. Проверка source
     if (!source || !isValidHttpUrl(decodeURIComponent(source))) {
