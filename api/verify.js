@@ -13,7 +13,7 @@ app.post('/verify', (req, res) => {
 
     try {
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
-        console.log(`decode: ${decoded}`)
+        console.log(`decode: ${JSON.stringify(decoded, null, 2)}`);
         
         // Дополнительная проверка в базе данных
         checkUserInDatabase(decoded.id).then(exists => {
