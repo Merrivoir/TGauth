@@ -12,10 +12,6 @@ const ALLOWED_IDS = process.env.ALLOWED_IDS?.split(',')?.reduce((acc, pair) => {
   return acc;
 }, {}) || {};
 
-console.log(`1.${ALLOWED_DOMAINS}`)
-
-console.log(`2.${ALLOWED_IDS}`)
-
 const isValidHttpUrl = (string) => {
   try {
     new URL(string);
@@ -28,7 +24,6 @@ const isValidHttpUrl = (string) => {
 app.get('/auth', async (req, res) => {
   try {
     const { source, ...authData } = req.query;
-    console.log(`3.${authData}`)
 
     // 1. Проверка source
     if (!source || !isValidHttpUrl(decodeURIComponent(source))) {
@@ -38,7 +33,6 @@ app.get('/auth', async (req, res) => {
     // 2. Проверка домена
     const decodedSource = decodeURIComponent(source);
     const targetDomain = new URL(decodedSource).hostname;
-    console.log(`4.${targetDomain}`)
     if (!ALLOWED_DOMAINS.includes(targetDomain)) {
       return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_domain');
     }
@@ -51,6 +45,8 @@ app.get('/auth', async (req, res) => {
       }
     }
     dataCheckArr.sort();
+    
+    console.log(`dataTG: ${dataCheckArr}`)
 
     const secretKey = crypto.createHash('sha256')
       .update(BOT_TOKEN)
