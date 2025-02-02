@@ -7,7 +7,7 @@ const app = express();
 // Настройка CORS
 const corsOptions = {
     origin: 'merrivoir.github.io/staff', // Разрешить все источники
-    methods: ['POST'],
+    methods: ['POST', 'GET', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
@@ -74,6 +74,10 @@ app.post('/verify', (req, res) => {
             error: error.message 
         });
     }
+});
+
+app.use((req, res) => {
+    res.status(404).send('Страница не найдена');
 });
 
 module.exports = app;
