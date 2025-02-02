@@ -1,8 +1,11 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
+
 const SECRET_KEY = process.env.SECRET_KEY;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ALLOWED_DOMAINS = process.env.ALLOWED_DOMAINS?.split(',') || [];
