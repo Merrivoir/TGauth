@@ -3,7 +3,15 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 
 const app = express();
-app.use(cors());
+
+// Настройка CORS
+const corsOptions = {
+    origin: '*', // Разрешить все источники
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 
 const checkUserInDatabase = (id) => {
     return new Promise((resolve, reject) => {
