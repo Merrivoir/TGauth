@@ -28,7 +28,7 @@ const isValidHttpUrl = (string) => {
 app.get('/auth', async (req, res) => {
   try {
     const { source, ...authData } = req.query;
-    console.log(authData)
+    console.log(`3.${authData}`)
 
     // 1. Проверка source
     if (!source || !isValidHttpUrl(decodeURIComponent(source))) {
@@ -38,7 +38,7 @@ app.get('/auth', async (req, res) => {
     // 2. Проверка домена
     const decodedSource = decodeURIComponent(source);
     const targetDomain = new URL(decodedSource).hostname;
-    console.log(`3.${targetDomain}`)
+    console.log(`4.${targetDomain}`)
     if (!ALLOWED_DOMAINS.includes(targetDomain)) {
       return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_domain');
     }
