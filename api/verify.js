@@ -6,8 +6,8 @@ const app = express();
 
 // Настройка CORS
 const corsOptions = {
-    origin: '*', // Разрешить все источники
-    methods: ['GET', 'POST'],
+    origin: 'merrivoir.github.io/staff', // Разрешить все источники
+    methods: ['POST'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
