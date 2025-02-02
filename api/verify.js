@@ -33,7 +33,10 @@ const checkUserInDatabase = (id) => {
         }
     });
 };
-
+app.options('*', (req, res) => {
+    res.sendStatus(200);
+  });
+  
 app.post('/verify', (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     
