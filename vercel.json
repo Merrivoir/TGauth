@@ -32,15 +32,6 @@
     {
       "src": "/denied",
       "dest": "/public/denied.html"
-    },
-    {
-      "src": "/api/(.*)",
-      "headers": {
-        "Access-Control-Allow-Origin": "merrivoir.github.io/staff",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization"
-      },
-      "dest": "/api/$1"
     }
   ]
 }

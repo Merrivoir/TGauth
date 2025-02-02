@@ -4,14 +4,12 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 
-// Настройка CORS
-const corsOptions = {
-    origin: 'merrivoir.github.io/staff', // Разрешить все источники
-    methods: ['POST', 'GET', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-app.use(cors(corsOptions));
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*'); // Или укажите конкретный домен
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    next();
+  });
 
 const checkUserInDatabase = (id) => {
     return new Promise((resolve, reject) => {
@@ -33,10 +31,11 @@ const checkUserInDatabase = (id) => {
         }
     });
 };
+
 app.options('*', (req, res) => {
     res.sendStatus(200);
   });
-  
+
 app.post('/verify', (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     
