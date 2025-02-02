@@ -16,10 +16,6 @@
       "dest": "/public/index.html"
     },
     {
-      "src": "/style.css",
-      "dest": "/public/style.css"
-    },
-    {
       "src": "/dashboard",
       "dest": "/public/dashboard.html"
     },
