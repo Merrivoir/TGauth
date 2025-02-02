@@ -3,6 +3,27 @@ const jwt = require('jsonwebtoken');
 
 const app = express();
 
+const checkUserInDatabase = (id) => {
+    return new Promise((resolve, reject) => {
+        // Получаем ALLOWED_IDS из переменных окружения
+        const allowedIds = process.env.ALLOWED_IDS || '';
+        
+        // Преобразуем строку в объект
+        const users = allowedIds.split(',').reduce((acc, user) => {
+            const [userId, role] = user.split(':');
+            acc[userId] = role;
+            return acc;
+        }, {});
+
+        // Проверяем, существует ли пользователь с заданным ID
+        if (users.hasOwnProperty(id)) {
+            resolve({ exists: true, role: users[id] });
+        } else {
+            resolve({ exists: false });
+        }
+    });
+};
+
 app.post('/verify', (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     
@@ -16,16 +37,24 @@ app.post('/verify', (req, res) => {
         console.log(`decode: ${JSON.stringify(decoded, null, 2)}`);
         
         // Дополнительная проверка в базе данных
-        checkUserInDatabase(decoded.id).then(exists => {
-            if (!exists) throw new Error('User not found');
+        checkUserInDatabase(decoded.id).then(({ exists, role }) => {
+            if (!exists) {
+                throw new Error('User not found');
+            }
             
             res.json({
                 valid: true,
                 user: {
                     id: decoded.id,
-                    role: decoded.role,
+                    role: role,
                     username: decoded.username
                 }
+            });
+
+        }).catch(error => {
+            res.status(500).json({ 
+                valid: false,
+                error: error.message 
             });
         });
 
