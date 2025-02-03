@@ -84,7 +84,9 @@ app.get('/auth', async (req, res) => {
       {
         id: userId,
         role: ALLOWED_IDS[userId] || "user",
-        username: authData.username
+        username: authData.username,
+        first_name: authData.first_name,
+        photo_url: authData.photo_url
       },
       SECRET_KEY,
       { expiresIn: '10y' }

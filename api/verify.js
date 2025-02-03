@@ -56,9 +56,11 @@ app.post('/verify', (req, res) => {
             res.json({
                 valid: true,
                 user: {
-                    id: decoded.id,
-                    role: role,
-                    username: decoded.username
+                  id: decoded.id,
+                  role: decoded.role,
+                  first_name: decoded.first_name,
+                  photo_url: decoded.photo_url,
+                  username: decoded.username
                 }
             });
 
