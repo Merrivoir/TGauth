@@ -86,8 +86,7 @@ app.get('/auth', async (req, res) => {
         role: ALLOWED_IDS[userId] || "user",
         username: authData.username
       },
-      SECRET_KEY,
-      { expiresIn: '24h' }
+      SECRET_KEY
     );
 
     // 6. Перенаправление
