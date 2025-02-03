@@ -86,11 +86,16 @@ app.get('/auth', async (req, res) => {
         role: ALLOWED_IDS[userId] || "user",
         username: authData.username,
         first_name: authData.first_name,
-        photo_url: authData.photo_url
+        photo_url: authData.photo_url || generateDefaultAvatar(authData.id),
       },
       SECRET_KEY,
       { expiresIn: '10y' }
     );
+
+    // Вспомогательная функция
+    function generateDefaultAvatar(userId) {
+      return `https://ui-avatars.com/api/?name=${userId}&background=random&size=128`;
+    }
 
     // 6. Перенаправление
     const redirectUrl = new URL(decodedSource);
