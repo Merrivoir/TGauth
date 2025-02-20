@@ -23,8 +23,6 @@ app.use((req, res, next) => {
   next();
 });
 
-const whUrl = "https://webhook.site/68c193d8-4b06-435c-8080-a7803166d65d";
-
 const checkUserInDatabase = (id) => {
   return new Promise((resolve, reject) => {
     const allowedIds = process.env.ALLOWED_IDS || '';
@@ -67,11 +65,18 @@ app.post('/verify', (req, res) => {
 
   try {
     // Отправка POST запроса на webhook для логирования даты/времени (если нужно)
+    const whUrl = "https://webhook.site/68c193d8-4b06-435c-8080-a7803166d65d";
     const data = {
       date: currentDate.toISOString(),
       time: currentDate.toLocaleTimeString()
     };
-    axios.post(whUrl, data);
+
+    const response = axios.get(whUrl, data);
+    
+    logger.info(`Webhook: ${response}`, {
+      time: currentDate.toISOString(),
+      ip: clientIp
+    });
 
     // Декодирование JWT
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
