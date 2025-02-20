@@ -4,33 +4,33 @@ const jwt = require('jsonwebtoken');
 const app = express();
 
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*'); // Или укажите конкретный домен
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    next();
-  });
+  res.header('Access-Control-Allow-Origin', '*'); // Или укажите конкретный домен
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
 const whUrl = "https://webhook.site/68c193d8-4b06-435c-8080-a7803166d65d";
 
 const checkUserInDatabase = (id) => {
-    return new Promise((resolve, reject) => {
-        // Получаем ALLOWED_IDS из переменных окружения
-        const allowedIds = process.env.ALLOWED_IDS || '';
+  return new Promise((resolve, reject) => {
+    // Получаем ALLOWED_IDS из переменных окружения
+    const allowedIds = process.env.ALLOWED_IDS || '';
         
-        // Преобразуем строку в объект
-        const users = allowedIds.split(',').reduce((acc, user) => {
-            const [userId, role] = user.split(':');
-            acc[userId] = role;
-            return acc;
-        }, {});
+    // Преобразуем строку в объект
+    const users = allowedIds.split(',').reduce((acc, user) => {
+      const [userId, role] = user.split(':');
+      acc[userId] = role;
+      return acc;
+    }, {});
 
-        // Проверяем, существует ли пользователь с заданным ID
-        if (users.hasOwnProperty(id)) {
-            resolve({ exists: true, role: users[id] });
-        } else {
-            resolve({ exists: false });
-        }
-    });
+    // Проверяем, существует ли пользователь с заданным ID
+    if (users.hasOwnProperty(id)) {
+      resolve({ exists: true, role: users[id] });
+    } else {
+      resolve({ exists: false });
+    }
+  });
 };
 
 app.options('*', (req, res) => {
@@ -38,16 +38,6 @@ app.options('*', (req, res) => {
   });
 
 app.post('/verify', (req, res) => {
-
-    const currentDate = new Date();
-    // Формирование данных для отправки
-    const data = {
-        date: currentDate.toISOString(),
-        time: currentDate.toLocaleTimeString()
-    };
-
-    // Отправка POST запроса на whUrl
-    axios.post(whUrl, data);
 
     const token = req.headers.authorization?.split(' ')[1];
     
@@ -57,6 +47,16 @@ app.post('/verify', (req, res) => {
     }
 
     try {
+
+        const currentDate = new Date();
+        // Формирование данных для отправки
+        const data = {
+            date: currentDate.toISOString(),
+            time: currentDate.toLocaleTimeString()
+        };
+
+        // Отправка POST запроса на whUrl
+        axios.post(whUrl, data);
         const decoded = jwt.verify(token, process.env.SECRET_KEY);
         console.log(`decode: ${JSON.stringify(decoded, null, 2)}`);
         
