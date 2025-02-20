@@ -34,61 +34,62 @@ const checkUserInDatabase = (id) => {
 };
 
 app.options('*', (req, res) => {
-    res.sendStatus(200);
-  });
+  res.sendStatus(200);
+});
 
 app.post('/verify', (req, res) => {
 
-    const token = req.headers.authorization?.split(' ')[1];
+  const token = req.headers.authorization?.split(' ')[1];
     
-    if (!token) {
-        console.log(`Токен в запросе не найден`)
-        return res.status(401).json({ valid: false });
-    }
+  if (!token) {
+    console.log(`Токен в запросе не найден`)
+    return res.status(401).json({ valid: false });
+  }
 
-    try {
+  try {
 
-        const currentDate = new Date();
-        // Формирование данных для отправки
-        const data = {
-            date: currentDate.toISOString(),
-            time: currentDate.toLocaleTimeString()
-        };
-
-        // Отправка POST запроса на whUrl
-        axios.post(whUrl, data);
-        const decoded = jwt.verify(token, process.env.SECRET_KEY);
-        console.log(`decode: ${JSON.stringify(decoded, null, 2)}`);
+    const currentDate = new Date();
+    
+    // Формирование данных для отправки
+    const data = {
+      date: currentDate.toISOString(),
+      time: currentDate.toLocaleTimeString()
+    };
+    // Отправка POST запроса на whUrl
+    axios.post(whUrl, data);
+    
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    console.log(`decode: ${JSON.stringify(decoded, null, 2)}`);
         
-        // Дополнительная проверка в базе данных
-        checkUserInDatabase(decoded.id).then(({ exists, role }) => {
-            if (!exists) {
-                throw new Error('User not found');
-            }
+    // Дополнительная проверка в базе данных
+    checkUserInDatabase(decoded.id).then(({ exists, role }) => {
+      if (!exists) {
+        throw new Error('User not found');
+      }
             
-            res.json({
-                valid: true,
-                user: {
-                  id: decoded.id,
-                  role: decoded.role,
-                  first_name: decoded.first_name,
-                  photo_url: decoded.photo_url,
-                  username: decoded.username
-                }
-            });
+      res.json({
+        valid: true,
+        user: {
+          id: decoded.id,
+          role: decoded.role,
+          first_name: decoded.first_name,
+          photo_url: decoded.photo_url,
+          username: decoded.username
+        }
+      });
 
-        }).catch(error => {
-            res.status(500).json({ 
-                valid: false,
-                error: error.message 
-            });
-        });
+    }).catch(error => {
+      res.status(500).json({ 
+        valid: false,
+        error: error.message 
+      });
+    });
 
     } catch (error) {
-        res.status(401).json({ 
-            valid: false,
-            error: error.message 
-        });
+      res.status(401).json({ 
+        valid: false,
+        error: error.message 
+      });
     }
 });
 
