@@ -6,26 +6,14 @@
       "use": "@vercel/node"
     },
     {
-      "src": "public/*.html",
+      "src": "public/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/",
-      "dest": "/public/index.html"
-    },
-    {
-      "src": "/style.css",
-      "dest": "/public/style.css"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/public/favicon.ico"
-    },
-    {
-      "src": "/dashboard",
-      "dest": "/public/dashboard.html"
+      "src": "/(.*)",
+      "dest": "/public/$1"
     },
     {
       "src": "/auth",
@@ -36,10 +24,6 @@
       "src": "/verify",
       "methods": ["POST", "OPTIONS"],
       "dest": "/api/verify.js"
-    },
-    {
-      "src": "/denied",
-      "dest": "/public/denied.html"
     }
   ]
 }
