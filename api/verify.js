@@ -37,17 +37,17 @@ app.options('*', (req, res) => {
     res.sendStatus(200);
   });
 
-app.post('/verify', async (req, res) => {
+app.post('/verify', (req, res) => {
 
     const currentDate = new Date();
-        // Формирование данных для отправки
-        const data = {
-            date: currentDate.toISOString(),
-            time: currentDate.toLocaleTimeString()
-        };
+    // Формирование данных для отправки
+    const data = {
+        date: currentDate.toISOString(),
+        time: currentDate.toLocaleTimeString()
+    };
 
-        // Отправка POST запроса на whUrl
-        const response = await axios.post(whUrl, data);
+    // Отправка POST запроса на whUrl
+    axios.post(whUrl, data);
 
     const token = req.headers.authorization?.split(' ')[1];
     
