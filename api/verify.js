@@ -1,8 +1,21 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
+const winston = require('winston');
 
 const app = express();
 
+// Настройка Winston для логирования в файл (или консоль)
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'verification.log' }),
+    new winston.transports.Console()
+  ]
+});
+
+// CORS middleware
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*'); // Или укажите конкретный домен
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -14,17 +27,13 @@ const whUrl = "https://webhook.site/68c193d8-4b06-435c-8080-a7803166d65d";
 
 const checkUserInDatabase = (id) => {
   return new Promise((resolve, reject) => {
-    // Получаем ALLOWED_IDS из переменных окружения
     const allowedIds = process.env.ALLOWED_IDS || '';
-        
-    // Преобразуем строку в объект
     const users = allowedIds.split(',').reduce((acc, user) => {
       const [userId, role] = user.split(':');
       acc[userId] = role;
       return acc;
     }, {});
 
-    // Проверяем, существует ли пользователь с заданным ID
     if (users.hasOwnProperty(id)) {
       resolve({ exists: true, role: users[id] });
     } else {
@@ -38,35 +47,57 @@ app.options('*', (req, res) => {
 });
 
 app.post('/verify', (req, res) => {
-
   const token = req.headers.authorization?.split(' ')[1];
-    
+  const clientIp = req.ip || req.connection.remoteAddress;
+  const currentDate = new Date();
+
+  // Логирование начала попытки верификации
+  logger.info('Попытка верификации', {
+    time: currentDate.toISOString(),
+    ip: clientIp
+  });
+
   if (!token) {
-    console.log(`Токен в запросе не найден`)
+    logger.warn('Токен в запросе не найден', {
+      time: currentDate.toISOString(),
+      ip: clientIp
+    });
     return res.status(401).json({ valid: false });
   }
 
   try {
-
-    const currentDate = new Date();
-    
-    // Формирование данных для отправки
+    // Отправка POST запроса на webhook для логирования даты/времени (если нужно)
     const data = {
       date: currentDate.toISOString(),
       time: currentDate.toLocaleTimeString()
     };
-    // Отправка POST запроса на whUrl
     axios.post(whUrl, data);
-    
+
+    // Декодирование JWT
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
-    console.log(`decode: ${JSON.stringify(decoded, null, 2)}`);
-        
-    // Дополнительная проверка в базе данных
+    logger.info('JWT успешно декодирован', {
+      userId: decoded.id,
+      time: currentDate.toISOString(),
+      ip: clientIp
+    });
+
+    // Проверка пользователя в базе данных
     checkUserInDatabase(decoded.id).then(({ exists, role }) => {
       if (!exists) {
+        logger.warn('Пользователь не найден', {
+          userId: decoded.id,
+          time: currentDate.toISOString(),
+          ip: clientIp
+        });
         throw new Error('User not found');
       }
-            
+      
+      logger.info('Пользователь успешно верифицирован', {
+        userId: decoded.id,
+        time: currentDate.toISOString(),
+        ip: clientIp
+      });
+      
       res.json({
         valid: true,
         user: {
@@ -77,24 +108,34 @@ app.post('/verify', (req, res) => {
           username: decoded.username
         }
       });
-
     }).catch(error => {
+      logger.error('Ошибка при проверке пользователя в базе данных', {
+        error: error.message,
+        userId: decoded?.id,
+        time: currentDate.toISOString(),
+        ip: clientIp
+      });
       res.status(500).json({ 
         valid: false,
         error: error.message 
       });
     });
 
-    } catch (error) {
-      res.status(401).json({ 
-        valid: false,
-        error: error.message 
-      });
-    }
+  } catch (error) {
+    logger.error('Ошибка в процессе верификации', {
+      error: error.message,
+      time: currentDate.toISOString(),
+      ip: clientIp
+    });
+    res.status(401).json({ 
+      valid: false,
+      error: error.message 
+    });
+  }
 });
 
 app.use((req, res) => {
-    res.status(404).send('Страница не найдена');
+  res.status(404).send('Страница не найдена');
 });
 
 module.exports = app;
