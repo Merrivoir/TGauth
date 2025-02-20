@@ -12,10 +12,6 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "/public/$1"
-    },
-    {
       "src": "/auth",
       "methods": ["GET"],
       "dest": "/api/auth.js"
@@ -24,6 +20,10 @@
       "src": "/verify",
       "methods": ["POST", "OPTIONS"],
       "dest": "/api/verify.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
     }
   ]
 }
