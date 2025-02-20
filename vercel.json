@@ -20,6 +20,10 @@
       "dest": "/public/style.css"
     },
     {
+      "src": "/favicon.ico",
+      "dest": "/public/favicon.ico"
+    },
+    {
       "src": "/dashboard",
       "dest": "/public/dashboard.html"
     },
