@@ -10,6 +10,8 @@ app.use((req, res, next) => {
     next();
   });
 
+const whUrl = "https://webhook.site/68c193d8-4b06-435c-8080-a7803166d65d";
+
 const checkUserInDatabase = (id) => {
     return new Promise((resolve, reject) => {
         // Получаем ALLOWED_IDS из переменных окружения
@@ -35,7 +37,18 @@ app.options('*', (req, res) => {
     res.sendStatus(200);
   });
 
-app.post('/verify', (req, res) => {
+app.post('/verify', async (req, res) => {
+
+    const currentDate = new Date();
+        // Формирование данных для отправки
+        const data = {
+            date: currentDate.toISOString(),
+            time: currentDate.toLocaleTimeString()
+        };
+
+        // Отправка POST запроса на whUrl
+        const response = await axios.post(whUrl, data);
+
     const token = req.headers.authorization?.split(' ')[1];
     
     if (!token) {
