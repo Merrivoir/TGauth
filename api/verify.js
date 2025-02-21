@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const winston = require('winston');
+const { Pool } = require('pg');
 
 const app = express();
 
@@ -22,28 +23,34 @@ app.use((req, res, next) => {
   next();
 });
 
-const checkUserInDatabase = (id) => {
-  return new Promise((resolve, reject) => {
-    const allowedIds = process.env.ALLOWED_IDS || '';
-    const users = allowedIds.split(',').reduce((acc, user) => {
-      const [userId, role] = user.split(':');
-      acc[userId] = role;
-      return acc;
-    }, {});
+// Создание пула подключений к Postgres
+const pool = new Pool({
+  host: process.env.PG_HOST || '193.228.139.199',
+  port: process.env.PG_PORT || 5432,
+  user: process.env.PG_USER,         // задайте в переменных окружения
+  password: process.env.PG_PASSWORD, // задайте в переменных окружения
+  database: process.env.PG_DATABASE  // задайте в переменных окружения
+});
 
-    if (users.hasOwnProperty(id)) {
-      resolve({ exists: true, role: users[id] });
-    } else {
-      resolve({ exists: false });
+// Функция для проверки пользователя через базу данных
+const checkUserInDatabase = async (id) => {
+  try {
+    const result = await pool.query('SELECT id, role FROM users WHERE id = $1', [id]);
+    if (result.rows.length > 0) {
+      return { exists: true, role: result.rows[0].role };
     }
-  });
+    return { exists: false };
+  } catch (error) {
+    throw new Error(`Ошибка БД: ${error.message}`);
+  }
 };
 
 app.options('*', (req, res) => {
   res.sendStatus(200);
 });
 
-app.post('/verify', (req, res) => {
+// Сделаем обработчик асинхронным для использования await
+app.post('/verify', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   const clientIp = req.ip || req.connection.remoteAddress;
   const currentDate = new Date();
@@ -63,7 +70,6 @@ app.post('/verify', (req, res) => {
   }
 
   try {
-
     // Декодирование JWT
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
     logger.info('JWT успешно декодирован', {
@@ -72,46 +78,34 @@ app.post('/verify', (req, res) => {
       ip: clientIp
     });
 
-    // Проверка пользователя в базе данных
-    checkUserInDatabase(decoded.id).then(({ exists, role }) => {
-      if (!exists) {
-        logger.warn('Пользователь не найден', {
-          userId: decoded.id,
-          time: currentDate.toISOString(),
-          ip: clientIp
-        });
-        throw new Error('User not found');
-      }
-      
-      logger.info('Пользователь успешно верифицирован', {
+    // Получаем информацию о пользователе из базы данных
+    const userData = await checkUserInDatabase(decoded.id);
+    if (!userData.exists) {
+      logger.warn('Пользователь не найден', {
         userId: decoded.id,
         time: currentDate.toISOString(),
         ip: clientIp
       });
-      
-      res.json({
-        valid: true,
-        user: {
-          id: decoded.id,
-          role: decoded.role,
-          first_name: decoded.first_name,
-          photo_url: decoded.photo_url,
-          username: decoded.username
-        }
-      });
-    }).catch(error => {
-      logger.error('Ошибка при проверке пользователя в базе данных', {
-        error: error.message,
-        userId: decoded?.id,
-        time: currentDate.toISOString(),
-        ip: clientIp
-      });
-      res.status(500).json({ 
-        valid: false,
-        error: error.message 
-      });
+      return res.status(500).json({ valid: false, error: 'User not found' });
+    }
+
+    logger.info('Пользователь успешно верифицирован', {
+      userId: decoded.id,
+      time: currentDate.toISOString(),
+      ip: clientIp
     });
 
+    // Отдаем информацию, беря роль из базы данных
+    res.json({
+      valid: true,
+      user: {
+        id: decoded.id,
+        role: userData.role,  // роль из базы данных
+        first_name: decoded.first_name,
+        photo_url: decoded.photo_url,
+        username: decoded.username
+      }
+    });
   } catch (error) {
     logger.error('Ошибка в процессе верификации', {
       error: error.message,
