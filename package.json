@@ -1,12 +1,12 @@
 {
   "name": "telegram-auth-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "dependencies": {
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "crypto": "latest",
     "cors": "^2.8.5",
-    "axios": "latest",
-    "winston": "latest"
+    "winston": "latest",
+    "pg": "latest"
   }
 }

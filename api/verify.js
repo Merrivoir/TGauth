@@ -1,6 +1,5 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const axios = require('axios');
 const winston = require('winston');
 
 const app = express();
