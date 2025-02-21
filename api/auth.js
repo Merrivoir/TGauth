@@ -51,6 +51,7 @@ const isValidHttpUrl = (string) => {
 app.get('/auth', async (req, res) => {
   try {
     const { source, ...authData } = req.query;
+    const currentDate = new Date();
 
     // 1. Проверка source
     if (!source || !isValidHttpUrl(decodeURIComponent(source))) {
@@ -78,7 +79,7 @@ app.get('/auth', async (req, res) => {
     console.log(`dataTG: ${dataCheckArr}`);
 
     // Логирование начала попытки верификации
-    logger.info('Попытка верификации', {
+    logger.info('Попытка авторизации', {
       time: currentDate.toISOString(),
       dataTG: dataCheckArr
     });
