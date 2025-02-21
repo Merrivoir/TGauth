@@ -2,9 +2,20 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const cors = require('cors');
+const winston = require('winston');
 const { Pool } = require('pg');
 
 const app = express();
+
+// Настройка Winston для логирования в файл (или консоль)
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.File({ filename: 'auth.log' }),
+    new winston.transports.Console()
+  ]
+});
 
 // Настройка CORS
 const corsOptions = {
@@ -43,15 +54,17 @@ app.get('/auth', async (req, res) => {
 
     // 1. Проверка source
     if (!source || !isValidHttpUrl(decodeURIComponent(source))) {
-      return res.redirect('https://richmom.vercel.app/denied?reason=invalid_source');
+      return res.redirect('https://richmom.vercel.app/denied.html?reason=invalid_source');
     }
 
+    /*
     // 2. Проверка домена
     const decodedSource = decodeURIComponent(source);
     const targetDomain = new URL(decodedSource).hostname;
     if (!ALLOWED_DOMAINS.includes(targetDomain)) {
-      return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_domain');
+      return res.redirect('https://richmom.vercel.app/denied.html?reason=unauthorized_domain');
     }
+    */
 
     // 3. Проверка подписи Telegram
     const dataCheckArr = [];
@@ -64,6 +77,12 @@ app.get('/auth', async (req, res) => {
     
     console.log(`dataTG: ${dataCheckArr}`);
 
+    // Логирование начала попытки верификации
+    logger.info('Попытка верификации', {
+      time: currentDate.toISOString(),
+      dataTG: dataCheckArr
+    });
+
     const secretKey = crypto.createHash('sha256')
       .update(BOT_TOKEN)
       .digest();
@@ -74,14 +93,14 @@ app.get('/auth', async (req, res) => {
       .digest('hex');
 
     if (computedHash !== authData.hash) {
-      return res.redirect('https://richmom.vercel.app/denied?reason=invalid_hash');
+      return res.redirect('https://richmom.vercel.app/denied.html?reason=invalid_hash');
     }
 
     // 4. Проверка пользователя через базу данных Postgres
     const userId = authData.id?.toString();
     if (!userId) {
       console.log('User ID отсутствует');
-      return res.redirect('https://richmom.vercel.app/denied?reason=unauthorized_user');
+      return res.redirect('https://richmom.vercel.app/denied.html?reason=unauthorized_user');
     }
 
     let user;
@@ -100,7 +119,7 @@ app.get('/auth', async (req, res) => {
       }
     } catch (dbError) {
       console.error('Database error:', dbError);
-      return res.redirect('https://richmom.vercel.app/denied?reason=server_error');
+      return res.redirect('https://richmom.vercel.app/denied.html?reason=server_error');
     }
 
     // 5. Генерация JWT с ролью из базы
@@ -128,7 +147,7 @@ app.get('/auth', async (req, res) => {
 
   } catch (error) {
     console.error('Auth error:', error);
-    res.redirect('https://richmom.vercel.app/denied?reason=server_error');
+    res.redirect('https://richmom.vercel.app/denied.html?reason=server_error');
   }
 });
 

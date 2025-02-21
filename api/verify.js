@@ -92,7 +92,7 @@ app.post('/verify', async (req, res) => {
     logger.info('Пользователь успешно верифицирован', {
       userId: decoded.id,
       time: currentDate.toISOString(),
-      ip: clientIp
+      role: userData.role
     });
 
     // Отдаем информацию, беря роль из базы данных
