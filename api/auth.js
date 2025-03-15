@@ -51,23 +51,13 @@ const isValidHttpUrl = (string) => {
 app.get('/auth', async (req, res) => {
   try {
     const { source, ...authData } = req.query;
-    const currentDate = new Date();
-    const decodedSource = decodeURIComponent(source);
-
-    // 1. Проверка source
     if (!source || !isValidHttpUrl(decodeURIComponent(source))) {
       return res.redirect('https://richmom.vercel.app/denied.html?reason=invalid_source');
     }
 
-    /*
-    // 2. Проверка домена
-    const targetDomain = new URL(decodedSource).hostname;
-    if (!ALLOWED_DOMAINS.includes(targetDomain)) {
-      return res.redirect('https://richmom.vercel.app/denied.html?reason=unauthorized_domain');
-    }
-    */
-
-    // 3. Проверка подписи Telegram
+    const decodedSource = decodeURIComponent(source);
+    
+    // Проверка подписи Telegram
     const dataCheckArr = [];
     for (const key in authData) {
       if (key !== 'hash' && authData[key] !== '') {
@@ -76,18 +66,9 @@ app.get('/auth', async (req, res) => {
     }
     dataCheckArr.sort();
     
-    console.log(`dataTG: ${dataCheckArr}`);
-
-    // Логирование начала попытки верификации
-    logger.info('Попытка авторизации', {
-      time: currentDate.toISOString(),
-      dataTG: dataCheckArr
-    });
-
     const secretKey = crypto.createHash('sha256')
       .update(BOT_TOKEN)
       .digest();
-
     const computedHash = crypto
       .createHmac('sha256', secretKey)
       .update(dataCheckArr.join('\n'))
@@ -97,19 +78,16 @@ app.get('/auth', async (req, res) => {
       return res.redirect('https://richmom.vercel.app/denied.html?reason=invalid_hash');
     }
 
-    // 4. Проверка пользователя через базу данных Postgres
+    // Проверка в базе данных
     const userId = authData.id?.toString();
     if (!userId) {
-      console.log('User ID отсутствует');
       return res.redirect('https://richmom.vercel.app/denied.html?reason=unauthorized_user');
     }
 
     let user;
     try {
-      // Ищем пользователя в таблице users
       const result = await pool.query('SELECT id, role FROM users WHERE id = $1', [userId]);
       if (result.rows.length === 0) {
-        // Если пользователь отсутствует, добавляем его с ролью guest
         const insertResult = await pool.query(
           'INSERT INTO users (id, role) VALUES ($1, $2) RETURNING id, role',
           [userId, 'guest']
@@ -119,11 +97,10 @@ app.get('/auth', async (req, res) => {
         user = result.rows[0];
       }
     } catch (dbError) {
-      console.error('Database error:', dbError);
       return res.redirect('https://richmom.vercel.app/denied.html?reason=server_error');
     }
 
-    // 5. Генерация JWT с ролью из базы
+    // Генерация JWT
     const token = jwt.sign(
       {
         id: userId,
@@ -136,18 +113,16 @@ app.get('/auth', async (req, res) => {
       { expiresIn: '10y' }
     );
 
-    // Вспомогательная функция для генерации аватара
     function generateDefaultAvatar(userId) {
       return `https://ui-avatars.com/api/?name=${userId}&background=random&size=128`;
     }
 
-    // 6. Перенаправление с добавлением токена в query-параметры
+    // Перенаправление на защищённую страницу с токеном
     const redirectUrl = new URL(decodedSource);
     redirectUrl.searchParams.set('token', token);
     res.redirect(redirectUrl.toString());
 
   } catch (error) {
-    console.error('Auth error:', error);
     res.redirect('https://richmom.vercel.app/denied.html?reason=server_error');
   }
 });
