@@ -107,7 +107,8 @@ app.post('/verify', async (req, res) => {
       valid: true,
       user: {
         id: decoded.id,
-        role: userData.role,  // роль из базы данных
+        role: userData.role,
+        team: userData.team,
         first_name: decoded.first_name,
         photo_url: decoded.photo_url,
         username: decoded.username
