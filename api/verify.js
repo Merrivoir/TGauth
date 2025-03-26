@@ -35,9 +35,15 @@ const pool = new Pool({
 // Функция для проверки пользователя через базу данных
 const checkUserInDatabase = async (id) => {
   try {
-    const result = await pool.query('SELECT id, role FROM users WHERE id = $1', [id]);
+    const result = await pool.query(`
+      SELECT u.role as role, t.team as team
+      FROM users u
+      LEFT JOIN trainers t ON u.id = t.tg_id
+      WHERE u.id = $1
+    `, [id]);
+
     if (result.rows.length > 0) {
-      return { exists: true, role: result.rows[0].role };
+      return { exists: true, role: result.rows[0].role, team: result.rows[0].team };
     }
     return { exists: false };
   } catch (error) {
@@ -92,6 +98,7 @@ app.post('/verify', async (req, res) => {
     logger.info('Пользователь успешно верифицирован', {
       userId: decoded.id,
       time: currentDate.toISOString(),
+      team: userData.team,
       role: userData.role
     });
 
