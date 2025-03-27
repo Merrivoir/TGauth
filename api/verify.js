@@ -36,14 +36,19 @@ const pool = new Pool({
 const checkUserInDatabase = async (id) => {
   try {
     const result = await pool.query(`
-      SELECT u.role as role, t.team as team
+      SELECT u.role as role, t.team as team, t.id as trainer
       FROM users u
       LEFT JOIN trainers t ON u.id = t.tg_id
       WHERE u.id = $1
     `, [id]);
 
     if (result.rows.length > 0) {
-      return { exists: true, role: result.rows[0].role, team: result.rows[0].team };
+      return {
+        exists: true,
+        role: result.rows[0].role,
+        team: result.rows[0].team,
+        trainer: result.rows[0].trainer
+      };
     }
     return { exists: false };
   } catch (error) {
@@ -99,7 +104,8 @@ app.post('/verify', async (req, res) => {
       userId: decoded.id,
       time: currentDate.toISOString(),
       team: userData.team,
-      role: userData.role
+      role: userData.role,
+      trainer: userData.trainer
     });
 
     // Отдаем информацию, беря роль из базы данных
@@ -109,6 +115,7 @@ app.post('/verify', async (req, res) => {
         id: decoded.id,
         role: userData.role,
         team: userData.team,
+        trainer: userData.trainer,
         first_name: decoded.first_name,
         photo_url: decoded.photo_url,
         username: decoded.username
