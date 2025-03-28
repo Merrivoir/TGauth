@@ -74,7 +74,7 @@ const checkUserInDatabase = async (id) => {
         trainer: result.rows[0].trainer
       };
       // Сохраняем данные в Redis на 1 час (3600 секунд)
-      await client.setEx(cacheKey, 3600, JSON.stringify(userData));
+      //await client.setEx(cacheKey, 3600, JSON.stringify(userData));
       return userData;
     }
     return { exists: false };
