@@ -32,7 +32,7 @@ const pool = new Pool({
   database: process.env.PG_DATABASE  // задайте в переменных окружения
 });
 
-const redis = require('redis');
+/* const redis = require('redis');
 const client = redis.createClient({
   socket: {
     host: process.env.REDIS_HOST || '127.0.0.1',
@@ -46,17 +46,17 @@ client.on('error', (err) => {
 
 (async () => {
   await client.connect();
-})();
+})(); */
 
 // Функция проверки пользователя с кешированием
 const checkUserInDatabase = async (id) => {
-  const cacheKey = `user:${id}`;
+  //const cacheKey = `user:${id}`;
   try {
     // Попытка получить данные из Redis
-    const cachedUser = await client.get(cacheKey);
+    /* const cachedUser = await client.get(cacheKey);
     if (cachedUser) {
       return JSON.parse(cachedUser);
-    }
+    } */
 
     // Если в кеше нет, выполняем запрос к базе данных
     const result = await pool.query(`
