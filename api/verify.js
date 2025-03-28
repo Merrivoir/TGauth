@@ -2,6 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const winston = require('winston');
 const { Pool } = require('pg');
+const redis = require('redis');
+const { promisify } = require('util');
 
 const app = express();
 
@@ -32,9 +34,31 @@ const pool = new Pool({
   database: process.env.PG_DATABASE  // задайте в переменных окружения
 });
 
+// Создаем клиента Redis
+const redisClient = redis.createClient({
+  host: process.env.REDIS_HOST || '127.0.0.1',
+  port: process.env.REDIS_PORT || 6379
+});
+redisClient.on('error', (err) => {
+  console.error('Redis error:', err);
+});
+
+// Промисифицированные методы
+const redisGetAsync = promisify(redisClient.get).bind(redisClient);
+const redisSetexAsync = promisify(redisClient.setex).bind(redisClient);
+
+
 // Функция для проверки пользователя через базу данных
 const checkUserInDatabase = async (id) => {
+  const cacheKey = `user:${id}`;
   try {
+    // Попытка получить данные из Redis
+    const cachedUser = await redisGetAsync(cacheKey);
+    if (cachedUser) {
+      // Если данные найдены, возвращаем их (парсим JSON)
+      return JSON.parse(cachedUser);
+    }
+
     const result = await pool.query(`
       SELECT u.role as role, t.team as team, t.id as trainer
       FROM users u
@@ -43,12 +67,15 @@ const checkUserInDatabase = async (id) => {
     `, [id]);
 
     if (result.rows.length > 0) {
-      return {
+      const userData = {
         exists: true,
         role: result.rows[0].role,
         team: result.rows[0].team,
         trainer: result.rows[0].trainer
       };
+      // Сохраняем данные в Redis на 12 часов (72000 секунд)
+      await redisSetexAsync(cacheKey, 72000, JSON.stringify(userData));
+      return userData;
     }
     return { exists: false };
   } catch (error) {
