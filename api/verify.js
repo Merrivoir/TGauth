@@ -2,8 +2,6 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const winston = require('winston');
 const { Pool } = require('pg');
-const redis = require('redis');
-const { promisify } = require('util');
 
 const app = express();
 
@@ -34,33 +32,35 @@ const pool = new Pool({
   database: process.env.PG_DATABASE  // задайте в переменных окружения
 });
 
-// Создаем клиента Redis
-const redisClient = redis.createClient({
-  host: process.env.REDIS_HOST || '127.0.0.1',
-  port: process.env.REDIS_PORT || 6379
+const redis = require('redis');
+const client = redis.createClient({
+  socket: {
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379
+  }
 });
-redisClient.on('error', (err) => {
+
+client.on('error', (err) => {
   console.error('Redis error:', err);
 });
 
-// Промисифицированные методы
-const redisGetAsync = promisify(redisClient.get).bind(redisClient);
-const redisSetexAsync = promisify(redisClient.setex).bind(redisClient);
+(async () => {
+  await client.connect();
+})();
 
-
-// Функция для проверки пользователя через базу данных
+// Функция проверки пользователя с кешированием
 const checkUserInDatabase = async (id) => {
   const cacheKey = `user:${id}`;
   try {
     // Попытка получить данные из Redis
-    const cachedUser = await redisGetAsync(cacheKey);
+    const cachedUser = await client.get(cacheKey);
     if (cachedUser) {
-      // Если данные найдены, возвращаем их (парсим JSON)
       return JSON.parse(cachedUser);
     }
 
+    // Если в кеше нет, выполняем запрос к базе данных
     const result = await pool.query(`
-      SELECT u.role as role, t.team as team, t.id as trainer
+      SELECT u.role, t.team, t.id AS trainer
       FROM users u
       LEFT JOIN trainers t ON u.id = t.tg_id
       WHERE u.id = $1
@@ -73,8 +73,8 @@ const checkUserInDatabase = async (id) => {
         team: result.rows[0].team,
         trainer: result.rows[0].trainer
       };
-      // Сохраняем данные в Redis на 12 часов (72000 секунд)
-      await redisSetexAsync(cacheKey, 72000, JSON.stringify(userData));
+      // Сохраняем данные в Redis на 1 час (3600 секунд)
+      await client.setEx(cacheKey, 3600, JSON.stringify(userData));
       return userData;
     }
     return { exists: false };

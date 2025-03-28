@@ -8,7 +8,6 @@
     "cors": "^2.8.5",
     "winston": "latest",
     "pg": "latest",
-    "redis": "latest",
-    "util": "latest"
+    "redis": "latest"
   }
 }
