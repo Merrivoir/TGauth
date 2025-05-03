@@ -32,11 +32,11 @@ const ALLOWED_DOMAINS = process.env.ALLOWED_DOMAINS?.split(',') || [];
 
 // Создание пула подключений к Postgres
 const pool = new Pool({
-  host: process.env.PG_HOST || '193.228.139.199',
-  port: process.env.PG_PORT || 5432,
-  user: process.env.PG_USER,       // задайте в переменных окружения или напрямую
-  password: process.env.PG_PASSWORD, // задайте в переменных окружения или напрямую
-  database: process.env.PG_DATABASE  // задайте в переменных окружения или напрямую
+  host: process.env.PG_HOST,
+  port: process.env.PG_PORT,
+  user: process.env.PG_USER,
+  password: process.env.PG_PASSWORD,
+  database: process.env.PG_DATABASE
 });
 
 const isValidHttpUrl = (string) => {
@@ -110,7 +110,7 @@ app.get('/auth', async (req, res) => {
         photo_url: authData.photo_url || generateDefaultAvatar(authData.id),
       },
       SECRET_KEY,
-      { expiresIn: '10y' }
+      { expiresIn: '14d' }
     );
 
     function generateDefaultAvatar(userId) {

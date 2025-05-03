@@ -25,11 +25,11 @@ app.use((req, res, next) => {
 
 // Создание пула подключений к Postgres
 const pool = new Pool({
-  host: process.env.PG_HOST || '193.228.139.199',
-  port: process.env.PG_PORT || 5432,
-  user: process.env.PG_USER,         // задайте в переменных окружения
-  password: process.env.PG_PASSWORD, // задайте в переменных окружения
-  database: process.env.PG_DATABASE  // задайте в переменных окружения
+  host: process.env.PG_HOST, 
+  port: process.env.PG_PORT,
+  user: process.env.PG_USER,         
+  password: process.env.PG_PASSWORD, 
+  database: process.env.PG_DATABASE 
 });
 
 /* const redis = require('redis');
